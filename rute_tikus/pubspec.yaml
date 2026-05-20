@@ -1,0 +1,25 @@
+name: rute_tikus
+description: "A new Flutter project."
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  cloud_firestore: ^6.4.1
+  firebase_auth: ^6.5.1
+  firebase_core: ^4.9.0
+  flutter:
+    sdk: flutter
+  geolocator: ^14.0.2
+  google_maps_flutter: ^2.17.0
+  image_picker: ^1.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
