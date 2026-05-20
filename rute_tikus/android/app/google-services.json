@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "380087449363",
+    "project_id": "rutetikuspab",
+    "storage_bucket": "rutetikuspab.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:380087449363:android:9450f8a6fbf2c576488ce6",
+        "android_client_info": {
+          "package_name": "com.example.rute_tikus"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCEHyDIEdny4Tdi5zCR7GxREz9Ei0iR2Hc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
