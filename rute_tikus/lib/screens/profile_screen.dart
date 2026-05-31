@@ -25,32 +25,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _loadUserData();
   }
 
-  void _loadUserData() async {
+  Future<void> _loadUserData() async {
     final user = _auth.currentUser;
-    if (user != null) {
-      try {
-        DocumentSnapshot userDoc = await _firestore.collection('users').doc(user.uid).get();
-        
-        QuerySnapshot postDocs = await _firestore.collection('postingan').where('userId', isEqualTo: user.uid).get();
+    if (user == null) return;
 
-        if (userDoc.exists) {
-          setState(() {
-            _fullName = userDoc['fullName'] ?? "Tanpa Nama";
-            _email = userDoc['email'] ?? user.email ?? "-";
-            _totalLaporan = postDocs.docs.length;
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _fullName = "Pengguna Baru";
-            _email = user.email ?? "-";
-            _totalLaporan = postDocs.docs.length;
-            _isLoading = false;
-          });
-        }
-      } catch (e) {
+    try {
+      final userDoc =
+          await _firestore.collection('users').doc(user.uid).get();
+
+      
+      final postDocs = await _firestore
+          .collection('postingan')
+          .where('userId', isEqualTo: user.uid)
+          .get();
+
+      if (mounted) {
         setState(() {
-          _fullName = "Gagal memuat data";
+          _fullName = userDoc.data()?['fullName'] ??
+              userDoc.data()?['fullname'] ??
+              'Pengguna Baru';
+          _email = userDoc.data()?['email'] ?? user.email ?? '-';
+          _totalLaporan = postDocs.docs.length;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _fullName = 'Gagal memuat data';
           _isLoading = false;
         });
       }
@@ -62,11 +64,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (_) => AlertDialog(
         title: const Text('Edit Nama Lengkap'),
         content: TextField(
           controller: nameController,
-          decoration: const InputDecoration(labelText: 'Nama Baru', border: OutlineInputBorder()),
+          decoration: const InputDecoration(
+              labelText: 'Nama Baru', border: OutlineInputBorder()),
         ),
         actions: [
           TextButton(
@@ -76,36 +79,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ElevatedButton(
             onPressed: () async {
               final newName = nameController.text.trim();
-              if (newName.isNotEmpty) {
-                final user = _auth.currentUser;
-                if (user != null) {
-                  await _firestore.collection('users').doc(user.uid).set({
-                    'fullName': newName,
-                    'email': user.email,
-                  }, SetOptions(merge: true));
-                  
-                  setState(() {
-                    _fullName = newName;
-                    _email = user.email ?? "-"; 
-                  });
-                  
-                  if (mounted) {
-                    Navigator.pop(context);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Nama berhasil diperbarui!')),
-                    );
-                  }
-                }
+              if (newName.isEmpty) return;
+              final user = _auth.currentUser;
+              if (user == null) return;
+
+              await _firestore
+                  .collection('users')
+                  .doc(user.uid)
+                  .set({'fullName': newName, 'email': user.email},
+                      SetOptions(merge: true));
+
+              if (mounted) {
+                setState(() => _fullName = newName);
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama berhasil diperbarui!')),
+                );
               }
             },
             child: const Text('Simpan'),
-          )
+          ),
         ],
       ),
     );
   }
 
-  void _logout() async {
+  Future<void> _logout() async {
     await _auth.signOut();
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,49 +115,44 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    Color backgroundColor;
-    Color textColor;
-    Color cardColor;
-
-    if (_isDarkMode) {
-      backgroundColor = Colors.grey[900]!;
-      textColor = Colors.white;
-      cardColor = Colors.grey[800]!;
-    } else {
-      backgroundColor = Colors.grey[100]!;
-      textColor = Colors.black;
-      cardColor = Colors.white;
-    }
+    final bg = _isDarkMode ? Colors.grey[900]! : Colors.grey[100]!;
+    final textColor = _isDarkMode ? Colors.white : Colors.black;
+    final cardColor = _isDarkMode ? Colors.grey[800]! : Colors.white;
 
     return Scaffold(
-      backgroundColor: backgroundColor,
+      backgroundColor: bg,
       appBar: AppBar(
         title: const Text('Profil Pengguna'),
         backgroundColor: const Color(0xFF000080),
+        foregroundColor: Colors.white,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
                   CircleAvatar(
                     radius: 50,
                     backgroundColor: const Color(0xFF000080),
                     child: Text(
-                      _fullName.isNotEmpty ? _fullName[0].toUpperCase() : "U",
-                      style: const TextStyle(fontSize: 40, color: Colors.white, fontWeight: FontWeight.bold),
+                      _fullName.isNotEmpty
+                          ? _fullName[0].toUpperCase()
+                          : 'U',
+                      style: const TextStyle(
+                          fontSize: 40,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  Text(
-                    _fullName,
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor),
-                  ),
-                  Text(
-                    _email,
-                    style: const TextStyle(fontSize: 16, color: Colors.grey),
-                  ),
+                  Text(_fullName,
+                      style: TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: textColor)),
+                  Text(_email,
+                      style: const TextStyle(fontSize: 16, color: Colors.grey)),
                   const SizedBox(height: 25),
 
                   Card(
@@ -166,35 +160,43 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     child: Column(
                       children: [
                         ListTile(
-                          leading: const Icon(Icons.person_outline, color: Color(0xFF000080)),
-                          title: Text('Edit Data Pribadi', style: TextStyle(color: textColor)),
-                          trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                          leading: const Icon(Icons.person_outline,
+                              color: Color(0xFF000080)),
+                          title: Text('Edit Data Pribadi',
+                              style: TextStyle(color: textColor)),
+                          trailing: const Icon(Icons.arrow_forward_ios,
+                              size: 16),
                           onTap: _editDataPribadi,
                         ),
                         const Divider(height: 1),
-
                         ListTile(
-                          leading: const Icon(Icons.history, color: const Color.fromARGB(255, 1, 1, 129)),
-                          title: Text('Riwayat Aktivitas', style: TextStyle(color: textColor)),
-                          subtitle: Text('Anda telah membagikan $_totalLaporan laporan jalan.', style: const TextStyle(color: Colors.grey)),
-                          trailing: const Icon(Icons.verified, size: 20, color: Colors.green),
+                          leading: const Icon(Icons.history,
+                              color: Color(0xFF000080)),
+                          title: Text('Riwayat Aktivitas',
+                              style: TextStyle(color: textColor)),
+                          subtitle: Text(
+                            'Anda telah membagikan $_totalLaporan laporan blokade.',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          trailing: const Icon(Icons.verified,
+                              size: 20, color: Colors.green),
                           onTap: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Total kontribusi Anda: $_totalLaporan laporan.')),
+                              SnackBar(
+                                content: Text(
+                                    'Total kontribusi: $_totalLaporan laporan.'),
+                              ),
                             );
                           },
                         ),
                         const Divider(height: 1),
-
                         SwitchListTile(
-                          secondary: const Icon(Icons.dark_mode_outlined, color: Color(0xFF000080)),
-                          title: Text('Mode Gelap', style: TextStyle(color: textColor)),
+                          secondary: const Icon(Icons.dark_mode_outlined,
+                              color: Color(0xFF000080)),
+                          title: Text('Mode Gelap',
+                              style: TextStyle(color: textColor)),
                           value: _isDarkMode,
-                          onChanged: (bool value) {
-                            setState(() {
-                              _isDarkMode = value;
-                            });
-                          },
+                          onChanged: (v) => setState(() => _isDarkMode = v),
                         ),
                       ],
                     ),
@@ -204,7 +206,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ElevatedButton.icon(
                     onPressed: _logout,
                     icon: const Icon(Icons.logout, color: Colors.white),
-                    label: const Text('Keluar Akun', style: TextStyle(color: Colors.white)),
+                    label: const Text('Keluar Akun',
+                        style: TextStyle(color: Colors.white)),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,
                       minimumSize: const Size(double.infinity, 45),
@@ -213,6 +216,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
+      bottomNavigationBar: Container(
+        color: Colors.black87,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Text(
+          'Total kontribusi Anda: $_totalLaporan laporan.',
+          style: const TextStyle(color: Colors.white, fontSize: 13),
+        ),
+      ),
     );
   }
 }
