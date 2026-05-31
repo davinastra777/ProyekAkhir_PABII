@@ -19,8 +19,9 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Rute Tikus',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        primaryColor: const Color.fromARGB(255, 1, 1, 129), // Warna biru tua (Navy)
+        primaryColor: const Color.fromARGB(255, 1, 1, 129),
       ),
       home: const SignInScreen(), 
     );

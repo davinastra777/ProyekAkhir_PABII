@@ -11,7 +11,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final _searchController = TextEditingController();
-  String _searchQuery = "";
+  String _searchQuery = '';
 
   @override
   void dispose() {
@@ -19,101 +19,221 @@ class _SearchScreenState extends State<SearchScreen> {
     super.dispose();
   }
 
+  Map<String, dynamic> _mapToDetailData(Map<String, dynamic> data) {
+    return {
+      'judul': data['title'],
+      'deskripsi': data['description'],
+      'lokasi': data['locationName'],
+      'jam': '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}',
+      'tempat_tujuan': data['nearestDest'],
+      'rute_alternatif': data['altRoute'],
+      'fotoBase64': data['image'],
+      'latitude': data['latitude'],
+      'longitude': data['longitude'],
+      'type': data['type'],
+      'durationDays': data['durationDays'],
+    };
+  }
+
+  Color _typeColor(String? type) {
+    switch (type) {
+      case 'Tenda Hajatan':
+        return const Color(0xFFFF9800);
+      case 'Penutupan Jalan':
+        return const Color(0xFFF44336);
+      case 'Pekerjaan Jalan':
+        return const Color(0xFFFFC107);
+      case 'Pasar Dadakan':
+        return const Color(0xFF4CAF50);
+      default:
+        return const Color(0xFF2196F3);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    const primary = Color(0xFF000080);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Cari Informasi Rute'),
-        backgroundColor: const Color.fromARGB(255, 1, 1, 129),
+        title: const Text('Cari Informasi Rute',
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: primary,
+        foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
+          Container(
+            color: primary,
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: TextField(
               controller: _searchController,
+              style: const TextStyle(color: Colors.black),
               decoration: InputDecoration(
-                labelText: 'Cari nama jalan atau judul laporan...',
-                border: const OutlineInputBorder(),
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
+                hintText: 'Cari nama jalan atau judul laporan...',
+                hintStyle: TextStyle(color: Colors.grey[500], fontSize: 14),
+                prefixIcon:
+                    const Icon(Icons.search, color: Color(0xFF000080)),
+                suffixIcon: _searchQuery.isNotEmpty
                     ? IconButton(
-                        icon: const Icon(Icons.clear),
+                        icon: const Icon(Icons.clear, color: Colors.grey),
                         onPressed: () {
                           setState(() {
                             _searchController.clear();
-                            _searchQuery = "";
+                            _searchQuery = '';
                           });
                         },
                       )
                     : null,
+                filled: true,
+                fillColor: Colors.white,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
               ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value.toLowerCase();
-                });
-              },
+              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
             ),
           ),
 
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('postingan').snapshots(),
+              
+              stream: FirebaseFirestore.instance
+                  .collection('postingan')
+                  .orderBy('createdAt', descending: true)
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(child: Text('Belum ada data laporan.'));
-                }
-
-                final allDocs = snapshot.data!.docs;
-                
-                List<DocumentSnapshot> filteredDocs = [];
-
-                for (var doc in allDocs) {
-                  var data = doc.data() as Map<String, dynamic>;
-                  String judul = (data['judul'] ?? "").toString().toLowerCase();
-                  String lokasi = (data['lokasi'] ?? "").toString().toLowerCase();
-
-                  if (_searchQuery.isEmpty) {
-                    filteredDocs.add(doc);
-                  } else if (judul.contains(_searchQuery) || lokasi.contains(_searchQuery)) {
-                    filteredDocs.add(doc);
-                  }
-                }
-
-                if (filteredDocs.isEmpty) {
                   return const Center(
-                    child: Text('Tidak ada laporan penutupan jalan yang cocok.'),
+                    child: Text('Belum ada data laporan.'),
+                  );
+                }
+
+                final filtered = snapshot.data!.docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  if (_searchQuery.isEmpty) return true;
+                  final title =
+                      (data['title'] ?? '').toString().toLowerCase();
+                  final lokasi =
+                      (data['locationName'] ?? '').toString().toLowerCase();
+                  final type =
+                      (data['type'] ?? '').toString().toLowerCase();
+                  return title.contains(_searchQuery) ||
+                      lokasi.contains(_searchQuery) ||
+                      type.contains(_searchQuery);
+                }).toList();
+
+                if (filtered.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.search_off,
+                            size: 52, color: Colors.grey),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Tidak ada laporan untuk "$_searchQuery"',
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
                   );
                 }
 
                 return ListView.builder(
-                  itemCount: filteredDocs.length,
+                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  itemCount: filtered.length,
                   itemBuilder: (context, index) {
-                    var data = filteredDocs[index].data() as Map<String, dynamic>;
+                    final data =
+                        filtered[index].data() as Map<String, dynamic>;
+                    final type = data['type'] as String?;
+                    final color = _typeColor(type);
 
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      margin: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 5),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 1.5,
                       child: ListTile(
-                        leading: const CircleAvatar(
-                          backgroundColor: Color(0xFF000080),
-                          child: Icon(Icons.location_on, color: Colors.white),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
+                        leading: CircleAvatar(
+                          backgroundColor: color.withOpacity(0.15),
+                          child: Icon(Icons.location_on, color: color),
                         ),
                         title: Text(
-                          data['judul'] ?? 'Tanpa Judul',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                          data['title'] ?? 'Tanpa Judul',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        subtitle: Text('Lokasi: ${data['lokasi'] ?? ''}'),
-                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                        
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 3),
+                            Row(
+                              children: [
+                                const Icon(Icons.signpost,
+                                    size: 12, color: Colors.grey),
+                                const SizedBox(width: 3),
+                                Expanded(
+                                  child: Text(
+                                    data['locationName'] ?? '-',
+                                    style: const TextStyle(fontSize: 12),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 3),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: color.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                type ?? 'Lainnya',
+                                style: TextStyle(
+                                    fontSize: 10,
+                                    color: color,
+                                    fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                          ],
+                        ),
+                        trailing: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.arrow_forward_ios, size: 14),
+                            if (data['durationDays'] != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                '${data['durationDays']}h',
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.grey),
+                              ),
+                            ],
+                          ],
+                        ),
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => DetailScreen(data: data),
+                              builder: (_) => DetailScreen(
+                              blockadeId: filtered[index].id,
+                                data: _mapToDetailData(data),
+                              ),
                             ),
                           );
                         },
