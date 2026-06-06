@@ -40,16 +40,13 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
   final _nearestDestController = TextEditingController();
 
   BlockadeType _selectedType = BlockadeType.tendaHajatan;
-
   DateTime _startDate = DateTime.now();
   DateTime _endDate = DateTime.now().add(const Duration(days: 1));
   TimeOfDay _openTime = const TimeOfDay(hour: 8, minute: 0);
   TimeOfDay _closeTime = const TimeOfDay(hour: 22, minute: 0);
-
   double? _latitude;
   double? _longitude;
   bool _isGettingLocation = false;
-
   bool _isUploading = false;
 
   late AnimationController _btnAnim;
@@ -90,16 +87,14 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
-        if (perm == LocationPermission.denied ||
-            perm == LocationPermission.deniedForever) {
+        if (perm == LocationPermission.denied || perm == LocationPermission.deniedForever) {
           _showSnack('Izin lokasi ditolak.');
           return;
         }
       }
 
       final pos = await Geolocator.getCurrentPosition(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
       ).timeout(const Duration(seconds: 10));
 
       setState(() {
@@ -107,7 +102,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
         _longitude = pos.longitude;
       });
 
-      _showSnack('Lokasi berhasil didapatkan ✓');
+      _showSnack('Lokasi berhasil didapatkan ?');
     } catch (e) {
       debugPrint('Lokasi gagal: $e');
       _showSnack('Gagal mendapatkan lokasi: $e');
@@ -135,6 +130,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
   }
 
   void _showImageSourceSheet() {
+    final theme = Theme.of(context);
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(
@@ -149,15 +145,15 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: Colors.grey[300],
+                color: theme.dividerColor,
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
             const SizedBox(height: 16),
             ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF1A237E),
-                child: Icon(Icons.camera_alt, color: Colors.white),
+              leading: CircleAvatar(
+                backgroundColor: theme.primaryColor,
+                child: const Icon(Icons.camera_alt, color: Colors.black),
               ),
               title: const Text('Ambil Foto'),
               subtitle: const Text('Foto langsung kondisi blokade'),
@@ -167,9 +163,9 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               },
             ),
             ListTile(
-              leading: const CircleAvatar(
-                backgroundColor: Color(0xFF1A237E),
-                child: Icon(Icons.photo_library, color: Colors.white),
+              leading: CircleAvatar(
+                backgroundColor: theme.primaryColor,
+                child: const Icon(Icons.photo_library, color: Colors.black),
               ),
               title: const Text('Pilih dari Galeri'),
               onTap: () {
@@ -250,10 +246,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
           .collection('users')
           .doc(uid)
           .get();
-      final fullName =
-          userDoc.data()?['fullName'] ??
-          userDoc.data()?['fullname'] ??
-          'Anonim';
+      final fullName = userDoc.data()?['fullName'] ?? userDoc.data()?['fullname'] ?? 'Anonim';
 
       await FirebaseFirestore.instance.collection('postingan').add({
         'image': _base64Image,
@@ -298,42 +291,41 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
 
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF1A237E);
-    const accent = Color(0xFFFF6F00);
+    final theme = Theme.of(context);
+    final accent = theme.primaryColor;
+    final borderColor = theme.dividerColor;
+    final surface = theme.cardColor;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F6FA),
       appBar: AppBar(
-        backgroundColor: primary,
-        foregroundColor: Colors.white,
-        title: const Text(
+        title: Text(
           'Buat Laporan Blokade',
-          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
-        elevation: 0,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: borderColor),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _SectionHeader(label: 'Foto Blokade', color: primary),
+            _SectionHeader(label: 'Foto Blokade', color: accent),
             const SizedBox(height: 8),
-            _buildImagePicker(primary),
-
+            _buildImagePicker(theme, accent, borderColor, surface),
             const SizedBox(height: 20),
-
-            _SectionHeader(label: 'Jenis Blokade', color: primary),
+            _SectionHeader(label: 'Jenis Blokade', color: accent),
             const SizedBox(height: 8),
-            _buildTypeSelector(primary),
-
+            _buildTypeSelector(theme, accent, borderColor, surface),
             const SizedBox(height: 16),
             _buildField(
               controller: _titleController,
               label: 'Judul Laporan',
               hint: 'Contoh: Tenda Hajatan Nikah RT 04',
               icon: Icons.title,
-              primary: primary,
+              theme: theme,
             ),
             const SizedBox(height: 12),
             _buildField(
@@ -341,40 +333,34 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               label: 'Deskripsi Kondisi',
               hint: 'Jelaskan kondisi blokade...',
               icon: Icons.description,
-              primary: primary,
+              theme: theme,
               maxLines: 3,
             ),
-
             const SizedBox(height: 20),
-
-            _SectionHeader(label: 'Lokasi Blokade', color: primary),
+            _SectionHeader(label: 'Lokasi Blokade', color: accent),
             const SizedBox(height: 8),
             _buildField(
               controller: _locationNameController,
               label: 'Nama Jalan / Lorong',
               hint: 'Contoh: Jl.Rajawali, Gang Melati',
               icon: Icons.signpost,
-              primary: primary,
+              theme: theme,
             ),
             const SizedBox(height: 12),
-            _buildLocationButton(primary),
-
+            _buildLocationButton(theme, accent, borderColor),
             const SizedBox(height: 20),
-
-            _SectionHeader(label: 'Estimasi Durasi', color: primary),
+            _SectionHeader(label: 'Estimasi Durasi', color: accent),
             const SizedBox(height: 8),
-            _buildDurationSection(primary),
-
+            _buildDurationSection(theme, accent, borderColor, surface),
             const SizedBox(height: 20),
-
-            _SectionHeader(label: 'Rute Alternatif', color: primary),
+            _SectionHeader(label: 'Rute Alternatif', color: accent),
             const SizedBox(height: 8),
             _buildField(
               controller: _nearestDestController,
               label: 'Tempat Tujuan Terdekat',
               hint: 'Contoh: Masjid Al-Hidayah, Minimarket XYZ',
               icon: Icons.place,
-              primary: primary,
+              theme: theme,
             ),
             const SizedBox(height: 12),
             _buildField(
@@ -382,10 +368,9 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               label: 'Saran Rute Alternatif',
               hint: 'Contoh: Belok kiri di pertigaan, lewat Gang Dahlia',
               icon: Icons.alt_route,
-              primary: primary,
+              theme: theme,
               maxLines: 3,
             ),
-
             const SizedBox(height: 32),
             ScaleTransition(
               scale: _btnScale,
@@ -405,12 +390,11 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                       : const Icon(Icons.upload_rounded),
                   label: Text(
                     _isUploading ? 'Mengunggah...' : 'Upload Laporan',
-                    style: const TextStyle(
-                        fontSize: 16, fontWeight: FontWeight.w700),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accent,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -427,17 +411,17 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
     );
   }
 
-  Widget _buildImagePicker(Color primary) {
+  Widget _buildImagePicker(ThemeData theme, Color accent, Color borderColor, Color surface) {
     return GestureDetector(
       onTap: _showImageSourceSheet,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         height: _imageBytes != null ? 220 : 160,
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: _imageBytes != null ? primary : Colors.grey[300]!,
+            color: _imageBytes != null ? accent : borderColor,
             width: _imageBytes != null ? 2 : 1,
           ),
           boxShadow: [
@@ -458,8 +442,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                     bottom: 8,
                     right: 8,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(
                         color: Colors.black.withOpacity(0.6),
                         borderRadius: BorderRadius.circular(20),
@@ -469,9 +452,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                         children: [
                           Icon(Icons.edit, color: Colors.white, size: 14),
                           SizedBox(width: 4),
-                          Text('Ganti Foto',
-                              style: TextStyle(
-                                  color: Colors.white, fontSize: 12)),
+                          Text('Ganti Foto', style: TextStyle(color: Colors.white, fontSize: 12)),
                         ],
                       ),
                     ),
@@ -481,22 +462,24 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
             : Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.add_a_photo_rounded, size: 44, color: primary),
+                  Icon(Icons.add_a_photo_rounded, size: 44, color: accent),
                   const SizedBox(height: 8),
-                  Text('Tap untuk tambah foto blokade',
-                      style:
-                          TextStyle(color: Colors.grey[600], fontSize: 14)),
+                  Text(
+                    'Tap untuk tambah foto blokade',
+                    style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodySmall?.color),
+                  ),
                   const SizedBox(height: 4),
-                  Text('Kamera atau galeri',
-                      style:
-                          TextStyle(color: Colors.grey[400], fontSize: 12)),
+                  Text(
+                    'Kamera atau galeri',
+                    style: theme.textTheme.bodySmall?.copyWith(color: theme.textTheme.bodySmall?.color),
+                  ),
                 ],
               ),
       ),
     );
   }
 
-  Widget _buildTypeSelector(Color primary) {
+  Widget _buildTypeSelector(ThemeData theme, Color accent, Color borderColor, Color surface) {
     return SizedBox(
       height: 90,
       child: ListView.separated(
@@ -510,44 +493,36 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
             onTap: () => setState(() => _selectedType = type),
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              width: 90,
-              padding:
-                  const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+              width: 96,
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
               decoration: BoxDecoration(
-                color: selected ? primary : Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: selected ? primary : Colors.grey[300]!,
-                  width: selected ? 2 : 1,
-                ),
+                color: selected ? accent : surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: selected ? accent : borderColor),
                 boxShadow: selected
                     ? [
                         BoxShadow(
-                          color: primary.withOpacity(0.2),
+                          color: accent.withOpacity(0.18),
                           blurRadius: 8,
                           offset: const Offset(0, 3),
                         )
                       ]
-                    : [],
+                    : null,
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(type.icon,
-                      color: selected ? Colors.white : type.color,
-                      size: 28),
-                  const SizedBox(height: 4),
+                  Icon(type.icon, color: selected ? Colors.black : type.color, size: 28),
+                  const SizedBox(height: 6),
                   Text(
                     type.label,
                     textAlign: TextAlign.center,
                     maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color:
-                          selected ? Colors.white : Colors.grey[700],
+                      color: selected ? Colors.black : theme.textTheme.bodySmall?.color,
                       fontSize: 10,
-                      fontWeight: selected
-                          ? FontWeight.w700
-                          : FontWeight.normal,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
                     ),
                   ),
                 ],
@@ -559,15 +534,14 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
     );
   }
 
-  Widget _buildLocationButton(Color primary) {
+  Widget _buildLocationButton(ThemeData theme, Color accent, Color borderColor) {
     final bool hasLocation = _latitude != null && _longitude != null;
-
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: hasLocation ? primary : Colors.grey[300]!,
+          color: hasLocation ? accent : borderColor,
           width: hasLocation ? 2 : 1,
         ),
         boxShadow: [
@@ -584,12 +558,8 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
           AnimatedSwitcher(
             duration: const Duration(milliseconds: 300),
             child: hasLocation
-                ? const Icon(Icons.check_circle,
-                    key: ValueKey('check'), color: Color(0xFF1A237E), size: 28)
-                : Icon(Icons.location_off,
-                    key: const ValueKey('off'),
-                    color: Colors.grey[400],
-                    size: 28),
+                ? Icon(Icons.check_circle, key: const ValueKey('check'), color: accent, size: 28)
+                : Icon(Icons.location_off, key: const ValueKey('off'), color: theme.dividerColor, size: 28),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -598,10 +568,9 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               children: [
                 Text(
                   hasLocation ? 'Lokasi berhasil diambil' : 'Belum ada lokasi',
-                  style: TextStyle(
+                  style: theme.textTheme.bodyLarge?.copyWith(
                     fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: hasLocation ? primary : Colors.grey[600],
+                    color: hasLocation ? accent : theme.textTheme.bodyMedium?.color,
                   ),
                 ),
                 const SizedBox(height: 2),
@@ -609,9 +578,8 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                   hasLocation
                       ? '${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}'
                       : 'Tap tombol untuk ambil koordinat GPS',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: hasLocation ? Colors.grey[600] : Colors.grey[400],
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: hasLocation ? theme.textTheme.bodySmall?.color : theme.dividerColor,
                   ),
                 ),
               ],
@@ -629,23 +597,18 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                       color: Colors.white,
                     ),
                   )
-                : Icon(
-                    hasLocation ? Icons.refresh : Icons.my_location,
-                    size: 16,
-                  ),
+                : Icon(hasLocation ? Icons.refresh : Icons.my_location, size: 16),
             label: Text(
               hasLocation ? 'Perbarui' : 'Ambil',
               style: const TextStyle(fontSize: 13),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: primary,
-              foregroundColor: Colors.white,
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              backgroundColor: accent,
+              foregroundColor: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(14),
               ),
-              elevation: 0,
             ),
           ),
         ],
@@ -653,13 +616,13 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
     );
   }
 
-  Widget _buildDurationSection(Color primary) {
+  Widget _buildDurationSection(ThemeData theme, Color accent, Color borderColor, Color surface) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey[200]!),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.04),
@@ -677,21 +640,20 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                   label: 'Mulai',
                   value: _fmtDate(_startDate),
                   icon: Icons.calendar_today,
-                  color: primary,
+                  color: accent,
                   onTap: _pickStartDate,
                 ),
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 8),
-                child:
-                    Icon(Icons.arrow_forward, color: Colors.grey, size: 20),
+                child: Icon(Icons.arrow_forward, color: Colors.grey, size: 20),
               ),
               Expanded(
                 child: _DateTile(
                   label: 'Selesai',
                   value: _fmtDate(_endDate),
                   icon: Icons.event_available,
-                  color: primary,
+                  color: accent,
                   onTap: _pickEndDate,
                 ),
               ),
@@ -699,47 +661,42 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
           ),
           const SizedBox(height: 10),
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
             decoration: BoxDecoration(
-              color: primary.withOpacity(0.08),
+              color: accent.withOpacity(0.08),
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               'Durasi: $_durationDays hari',
-              style: TextStyle(
-                color: primary,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: accent,
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
               ),
             ),
           ),
           const SizedBox(height: 12),
-          const Divider(height: 1),
+          Divider(color: borderColor),
           const SizedBox(height: 12),
           Row(
             children: [
               const Icon(Icons.access_time, size: 18, color: Colors.grey),
               const SizedBox(width: 6),
-              Text('Jam Blokade:',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[600])),
+              Text('Jam Blokade:', style: theme.textTheme.bodySmall?.copyWith(color: theme.textTheme.bodySmall?.color)),
               const Spacer(),
               _TimePill(
                 time: _fmtTime(_openTime),
                 label: 'Buka',
-                color: primary,
+                color: accent,
                 onTap: _pickOpenTime,
               ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Text('–',
-                    style: TextStyle(
-                        color: Colors.grey[400], fontSize: 16)),
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 6),
+                child: Text('�', style: TextStyle(color: Colors.grey, fontSize: 16)),
               ),
               _TimePill(
                 time: _fmtTime(_closeTime),
                 label: 'Tutup',
-                color: Colors.red,
+                color: theme.colorScheme.error,
                 onTap: _pickCloseTime,
               ),
             ],
@@ -754,7 +711,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
     required String label,
     required String hint,
     required IconData icon,
-    required Color primary,
+    required ThemeData theme,
     int maxLines = 1,
   }) {
     return TextField(
@@ -764,23 +721,23 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        prefixIcon: Icon(icon, color: primary, size: 20),
+        prefixIcon: Icon(icon, color: theme.primaryColor, size: 20),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: theme.cardColor,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+          borderSide: BorderSide(color: theme.dividerColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: primary, width: 2),
+          borderSide: BorderSide(color: theme.primaryColor, width: 2),
         ),
-        labelStyle: TextStyle(color: Colors.grey[600], fontSize: 14),
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
+        labelStyle: theme.textTheme.bodySmall,
+        hintStyle: theme.textTheme.bodySmall,
       ),
     );
   }
@@ -795,9 +752,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Text(label,
-            style: TextStyle(
-                fontSize: 15, fontWeight: FontWeight.w700, color: color)),
+        Text(label, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: color)),
         const SizedBox(width: 8),
         Expanded(child: Divider(color: color.withOpacity(0.2))),
       ],
@@ -828,7 +783,7 @@ class _DateTile extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: color.withOpacity(0.06),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: color.withOpacity(0.25)),
         ),
         child: Column(
@@ -838,19 +793,11 @@ class _DateTile extends StatelessWidget {
               children: [
                 Icon(icon, size: 13, color: color),
                 const SizedBox(width: 4),
-                Text(label,
-                    style: TextStyle(
-                        fontSize: 11,
-                        color: color,
-                        fontWeight: FontWeight.w600)),
+                Text(label, style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600)),
               ],
             ),
             const SizedBox(height: 4),
-            Text(value,
-                style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.black87)),
+            Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: Colors.black87)),
           ],
         ),
       ),
@@ -859,12 +806,7 @@ class _DateTile extends StatelessWidget {
 }
 
 class _TimePill extends StatelessWidget {
-  const _TimePill({
-    required this.time,
-    required this.label,
-    required this.color,
-    required this.onTap,
-  });
+  const _TimePill({required this.time, required this.label, required this.color, required this.onTap});
 
   final String time;
   final String label;
@@ -876,24 +818,17 @@ class _TimePill extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.3)),
+          color: color.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label,
-                style: TextStyle(
-                    fontSize: 10,
-                    color: color,
-                    fontWeight: FontWeight.w500)),
-            Text(time,
-                style: TextStyle(
-                    fontSize: 14,
-                    color: color,
-                    fontWeight: FontWeight.w700)),
+            Text(label, style: TextStyle(fontSize: 10, color: color)),
+            const SizedBox(height: 2),
+            Text(time, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: color)),
           ],
         ),
       ),

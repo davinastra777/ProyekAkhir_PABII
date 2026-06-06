@@ -15,8 +15,6 @@ class _CommentsSectionState extends State<CommentsSection> {
   final _commentController = TextEditingController();
   bool _isSending = false;
 
-  static const primary = Color(0xFF1A237E);
-
   CollectionReference get _commentsRef => FirebaseFirestore.instance
       .collection('postingan')
       .doc(widget.blockadeId)
@@ -87,33 +85,34 @@ class _CommentsSectionState extends State<CommentsSection> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.primaryColor;
+    final surface = theme.cardColor;
+    final caption = theme.textTheme.bodySmall;
+
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 12),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: Row(
             children: [
-              Icon(Icons.comment_outlined, color: primary, size: 18),
-              SizedBox(width: 6),
+              Icon(Icons.comment_outlined, color: accent, size: 18),
+              const SizedBox(width: 6),
               Text(
                 'Komentar',
-                style: TextStyle(
-                  fontSize: 15,
+                style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w700,
-                  color: primary,
+                  color: accent,
                 ),
               ),
             ],
           ),
         ),
-
         StreamBuilder<QuerySnapshot>(
-          stream: _commentsRef
-              .orderBy('createdAt', descending: false)
-              .snapshots(),
+          stream: _commentsRef.orderBy('createdAt', descending: false).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Padding(
@@ -123,13 +122,12 @@ class _CommentsSectionState extends State<CommentsSection> {
             }
 
             final docs = snapshot.data?.docs ?? [];
-
             if (docs.isEmpty) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              return Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: Text(
                   'Belum ada komentar. Jadilah yang pertama!',
-                  style: TextStyle(color: Colors.grey, fontSize: 13),
+                  style: caption?.copyWith(color: theme.hintColor),
                 ),
               );
             }
@@ -142,20 +140,21 @@ class _CommentsSectionState extends State<CommentsSection> {
                 final doc = docs[i];
                 final data = doc.data() as Map<String, dynamic>;
                 final isOwner = data['userId'] == currentUid;
+                final author = (data['fullName'] ?? 'Anonim').toString();
+                final createdAt = _timeAgo(data['createdAt']);
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CircleAvatar(
                         radius: 18,
-                        backgroundColor: primary.withOpacity(0.15),
+                        backgroundColor: accent.withOpacity(0.15),
                         child: Text(
-                          (data['fullName'] ?? 'A')[0].toUpperCase(),
-                          style: const TextStyle(
-                            color: primary,
+                          author.isNotEmpty ? author[0].toUpperCase() : 'A',
+                          style: TextStyle(
+                            color: accent,
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                           ),
@@ -164,33 +163,30 @@ class _CommentsSectionState extends State<CommentsSection> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                           decoration: BoxDecoration(
-                            color: isOwner
-                                ? primary.withOpacity(0.07)
-                                : Colors.grey[100],
-                            borderRadius: BorderRadius.circular(12),
+                            color: surface,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: theme.dividerColor),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Row(
                                 children: [
-                                  Text(
-                                    data['fullName'] ?? 'Anonim',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      fontSize: 13,
-                                      color: primary,
+                                  Expanded(
+                                    child: Text(
+                                      author,
+                                      style: theme.textTheme.bodyMedium?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: theme.textTheme.bodyLarge?.color,
+                                      ),
                                     ),
                                   ),
-                                  const Spacer(),
                                   Text(
-                                    _timeAgo(data['createdAt']),
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey[500],
+                                    createdAt,
+                                    style: theme.textTheme.bodySmall?.copyWith(
+                                      color: theme.hintColor,
                                     ),
                                   ),
                                   if (isOwner) ...[
@@ -199,14 +195,11 @@ class _CommentsSectionState extends State<CommentsSection> {
                                       onTap: () => showDialog(
                                         context: context,
                                         builder: (_) => AlertDialog(
-                                          title:
-                                              const Text('Hapus Komentar'),
-                                          content: const Text(
-                                              'Yakin ingin menghapus komentar ini?'),
+                                          title: const Text('Hapus Komentar'),
+                                          content: const Text('Yakin ingin menghapus komentar ini?'),
                                           actions: [
                                             TextButton(
-                                              onPressed: () =>
-                                                  Navigator.pop(context),
+                                              onPressed: () => Navigator.pop(context),
                                               child: const Text('Batal'),
                                             ),
                                             TextButton(
@@ -214,23 +207,20 @@ class _CommentsSectionState extends State<CommentsSection> {
                                                 Navigator.pop(context);
                                                 _deleteComment(doc.id);
                                               },
-                                              child: const Text('Hapus',
-                                                  style: TextStyle(
-                                                      color: Colors.red)),
+                                              child: const Text('Hapus', style: TextStyle(color: Colors.red)),
                                             ),
                                           ],
                                         ),
                                       ),
-                                      child: const Icon(Icons.close,
-                                          size: 14, color: Colors.grey),
+                                      child: Icon(Icons.close, size: 14, color: theme.hintColor),
                                     ),
                                   ],
                                 ],
                               ),
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 8),
                               Text(
                                 data['text'] ?? '',
-                                style: const TextStyle(fontSize: 13),
+                                style: theme.textTheme.bodyMedium,
                               ),
                             ],
                           ),
@@ -243,19 +233,17 @@ class _CommentsSectionState extends State<CommentsSection> {
             );
           },
         ),
-
         const SizedBox(height: 8),
-        const Divider(height: 1),
+        Divider(color: theme.dividerColor),
         const SizedBox(height: 8),
-
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: Row(
             children: [
               CircleAvatar(
                 radius: 18,
-                backgroundColor: primary.withOpacity(0.15),
-                child: const Icon(Icons.person, color: primary, size: 18),
+                backgroundColor: accent.withOpacity(0.15),
+                child: Icon(Icons.person, color: accent, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -265,12 +253,10 @@ class _CommentsSectionState extends State<CommentsSection> {
                   maxLines: null,
                   decoration: InputDecoration(
                     hintText: 'Tulis komentar...',
-                    hintStyle:
-                        TextStyle(color: Colors.grey[400], fontSize: 13),
+                    hintStyle: caption?.copyWith(color: theme.hintColor),
                     filled: true,
-                    fillColor: Colors.grey[100],
-                    contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
+                    fillColor: surface,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(24),
                       borderSide: BorderSide.none,
@@ -286,7 +272,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    color: _isSending ? Colors.grey : primary,
+                    color: _isSending ? theme.disabledColor : accent,
                     shape: BoxShape.circle,
                   ),
                   child: _isSending
@@ -297,8 +283,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                             color: Colors.white,
                           ),
                         )
-                      : const Icon(Icons.send,
-                          color: Colors.white, size: 18),
+                      : const Icon(Icons.send, color: Colors.white, size: 18),
                 ),
               ),
             ],

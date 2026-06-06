@@ -2,7 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'detail_screen.dart';
+import 'package:rute_tikus/screens/detail_screen.dart';
 
 class FavoriteScreen extends StatefulWidget {
   const FavoriteScreen({super.key});
@@ -16,16 +16,29 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.primaryColor;
+    final borderColor = theme.dividerColor;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Disimpan',
-            style: TextStyle(fontWeight: FontWeight.w700)),
-        backgroundColor: const Color(0xFF000080),
-        foregroundColor: Colors.white,
-        elevation: 0,
+        title: Text(
+          'Disimpan',
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: borderColor),
+        ),
       ),
       body: currentUserId == null
-          ? const Center(child: Text('Silakan login terlebih dahulu.'))
+          ? Center(
+              child: Text(
+                'Silakan login terlebih dahulu.',
+                style: theme.textTheme.bodyMedium,
+              ),
+            )
           : StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
                   .collection('favorites')
@@ -36,16 +49,16 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
+                  return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.favorite_border,
-                            size: 64, color: Colors.grey),
-                        SizedBox(height: 12),
-                        Text('Belum ada postingan yang difavoritkan.',
-                            style:
-                                TextStyle(color: Colors.grey, fontSize: 15)),
+                        Icon(Icons.favorite_border, size: 64, color: theme.dividerColor),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Belum ada postingan yang difavoritkan.',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.dividerColor),
+                        ),
                       ],
                     ),
                   );
@@ -57,23 +70,21 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   itemCount: favoriteList.length,
                   itemBuilder: (context, index) {
-                    final data =
-                        favoriteList[index].data() as Map<String, dynamic>;
+                    final data = favoriteList[index].data() as Map<String, dynamic>;
                     final favDocId = favoriteList[index].id;
                     final postinganId = data['postinganId'] ?? '';
 
                     return Card(
-                      margin: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 6),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                      margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                       elevation: 2,
+                      shadowColor: isDark ? Colors.black54 : Colors.black12,
+                      color: theme.cardColor,
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           ClipRRect(
-                            borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(14)),
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
                             child: data['fotoBase64'] != null
                                 ? Image.memory(
                                     base64Decode(data['fotoBase64']),
@@ -83,14 +94,12 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                   )
                                 : Container(
                                     height: 160,
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: Icon(Icons.image,
-                                          size: 50, color: Colors.grey),
+                                    color: isDark ? const Color(0xFF111111) : const Color(0xFFF2F2F2),
+                                    child: Center(
+                                      child: Icon(Icons.image_outlined, size: 50, color: theme.dividerColor),
                                     ),
                                   ),
                           ),
-
                           Padding(
                             padding: const EdgeInsets.fromLTRB(12, 10, 12, 4),
                             child: Column(
@@ -98,100 +107,74 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                               children: [
                                 Text(
                                   data['judul'] ?? 'Tanpa Judul',
-                                  style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold),
+                                  style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 4),
-
                                 Row(
                                   children: [
-                                    const Icon(Icons.location_on,
-                                        size: 13, color: Colors.redAccent),
+                                    Icon(Icons.location_on, size: 13, color: accent),
                                     const SizedBox(width: 3),
                                     Expanded(
                                       child: Text(
                                         data['lokasi'] ?? '-',
-                                        style: const TextStyle(
-                                            fontSize: 12,
-                                            color: Colors.grey),
+                                        style: theme.textTheme.bodySmall,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                   ],
                                 ),
-
+                                const SizedBox(height: 8),
                                 Row(
                                   children: [
-                                    const Icon(Icons.access_time,
-                                        size: 13, color: Colors.grey),
+                                    Icon(Icons.access_time, size: 13, color: theme.dividerColor),
                                     const SizedBox(width: 3),
                                     Text(
                                       data['jam'] ?? '-',
-                                      style: const TextStyle(
-                                          fontSize: 12, color: Colors.grey),
+                                      style: theme.textTheme.bodySmall,
                                     ),
                                   ],
                                 ),
-
-                                if (data['rute_alternatif'] != null &&
-                                    data['rute_alternatif']
-                                        .toString()
-                                        .isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 4),
-                                    child: Row(
-                                      children: [
-                                        const Icon(Icons.alt_route,
-                                            size: 13, color: Colors.green),
-                                        const SizedBox(width: 3),
-                                        Expanded(
-                                          child: Text(
-                                            data['rute_alternatif'],
-                                            style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.green),
-                                            maxLines: 1,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                if (data['rute_alternatif'] != null && data['rute_alternatif'].toString().isNotEmpty) ...[
+                                  const SizedBox(height: 8),
+                                  Row(
+                                    children: [
+                                      Icon(Icons.alt_route, size: 13, color: accent),
+                                      const SizedBox(width: 3),
+                                      Expanded(
+                                        child: Text(
+                                          data['rute_alternatif'],
+                                          style: theme.textTheme.bodySmall?.copyWith(color: accent),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
                                         ),
-                                      ],
-                                    ),
+                                      ),
+                                    ],
                                   ),
+                                ],
                               ],
                             ),
                           ),
-
                           Padding(
-                            padding:
-                                const EdgeInsets.fromLTRB(8, 0, 8, 8),
+                            padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
                                 TextButton.icon(
                                   onPressed: () async {
-                                    await FirebaseFirestore.instance
-                                        .collection('favorites')
-                                        .doc(favDocId)
-                                        .delete();
+                                    await FirebaseFirestore.instance.collection('favorites').doc(favDocId).delete();
                                     if (mounted) {
-                                      ScaffoldMessenger.of(context)
-                                          .showSnackBar(
-                                        const SnackBar(
-                                            content: Text(
-                                                'Dihapus dari favorit')),
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('Dihapus dari favorit')),
                                       );
                                     }
                                   },
-                                  icon: const Icon(Icons.favorite,
-                                      color: Colors.red, size: 18),
-                                  label: const Text('Hapus',
-                                      style: TextStyle(color: Colors.red)),
+                                  icon: Icon(Icons.favorite, color: Colors.redAccent, size: 16),
+                                  label: Text('Hapus', style: TextStyle(color: Colors.redAccent)),
                                 ),
-
+                                const SizedBox(width: 8),
                                 ElevatedButton.icon(
                                   onPressed: () {
                                     Navigator.push(
@@ -204,18 +187,15 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                       ),
                                     );
                                   },
-                                  icon: const Icon(Icons.arrow_forward,
-                                      size: 16),
+                                  icon: const Icon(Icons.arrow_forward, size: 16),
                                   label: const Text('Lihat Detail'),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF000080),
-                                    foregroundColor: Colors.white,
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 12, vertical: 8),
+                                    backgroundColor: accent,
+                                    foregroundColor: Colors.black,
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
+                                      borderRadius: BorderRadius.circular(14),
                                     ),
-                                    elevation: 0,
                                   ),
                                 ),
                               ],

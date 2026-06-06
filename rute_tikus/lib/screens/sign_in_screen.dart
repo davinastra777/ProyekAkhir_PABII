@@ -1,7 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'main_screen.dart';
+import 'home_screen.dart';
 import 'sign_up_screen.dart';
 
 class SignInScreen extends StatefulWidget {
@@ -23,18 +23,18 @@ class SignInScreenState extends State<SignInScreen> {
     }
     final email = _emailController.text.trim();
     final password = _passwordController.text;
-    
+
     setState(() => _isLoading = true);
-    
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
-      
+
       if (mounted) {
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainScreen()),
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
         );
       }
     } on FirebaseAuthException catch (error) {
@@ -53,26 +53,35 @@ class SignInScreenState extends State<SignInScreen> {
   }
 
   bool _isValidEmail(String email) {
-    String emailRegex = r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zAZ0-9-]+)*$";
+    String emailRegex = r"^[a-zA-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zAZ0-9-]+)*$";
     return RegExp(emailRegex).hasMatch(email);
   }
 
   String _getAuthErrorMessage(String code) {
-      if (code == 'user-not-found') {
-        return 'Email tidak ditemukan';
-      } else if (code == 'wrong-password') {
-        return 'Password salah. Silakan coba lagi.';
-      } else {
-        return 'Terjadi kesalahan. Silakan coba lagi.';
-      }
+    if (code == 'user-not-found') {
+      return 'Email tidak ditemukan';
+    } else if (code == 'wrong-password') {
+      return 'Password salah. Silakan coba lagi.';
+    } else {
+      return 'Terjadi kesalahan. Silakan coba lagi.';
     }
-  
+  }
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = theme.primaryColor;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Sign In Rute Tikus'),
-        backgroundColor: const Color.fromARGB(255, 1, 1, 129),
+        title: Text(
+          'Sign In Rute Tikus',
+          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        ),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: theme.dividerColor),
+        ),
       ),
       body: Center(
         child: Padding(
@@ -83,17 +92,14 @@ class SignInScreenState extends State<SignInScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // Logo
-                  const Icon(Icons.map, size: 80, color: Color(0xFF000080)),
+                  Icon(Icons.map_outlined, size: 80, color: accent),
                   const SizedBox(height: 30),
-
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: 'Email',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.email),
+                      prefixIcon: const Icon(Icons.email_outlined),
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty || !_isValidEmail(value)) {
@@ -108,8 +114,7 @@ class SignInScreenState extends State<SignInScreen> {
                     obscureText: !_isPasswordVisible,
                     decoration: InputDecoration(
                       labelText: 'Password',
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.lock),
+                      prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
@@ -134,21 +139,25 @@ class SignInScreenState extends State<SignInScreen> {
                       : ElevatedButton(
                           onPressed: _signIn,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color.fromARGB(255, 1, 1, 129),
-                            minimumSize: const Size(double.infinity, 50),
+                            backgroundColor: accent,
+                            foregroundColor: Colors.black,
+                            minimumSize: const Size(double.infinity, 52),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
                           ),
                           child: const Text('Sign In', style: TextStyle(fontSize: 18)),
                         ),
                   const SizedBox(height: 16.0),
                   RichText(
                     text: TextSpan(
-                      style: const TextStyle(fontSize: 16.0, color: Colors.black),
+                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodySmall?.color),
                       children: [
-                        const TextSpan(text: "Belum punya akun? "),
+                        const TextSpan(text: 'Belum punya akun? '),
                         TextSpan(
-                          text: "Sign Up",
-                          style: const TextStyle(
-                            color: Colors.blue,
+                          text: 'Sign Up',
+                          style: TextStyle(
+                            color: accent,
                             fontWeight: FontWeight.bold,
                           ),
                           recognizer: TapGestureRecognizer()
