@@ -171,8 +171,8 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                       );
                                     }
                                   },
-                                  icon: Icon(Icons.favorite, color: Colors.redAccent, size: 16),
-                                  label: Text('Hapus', style: TextStyle(color: Colors.redAccent)),
+                                  icon: const Icon(Icons.favorite, color: Colors.redAccent, size: 16),
+                                  label: const Text('Hapus', style: TextStyle(color: Colors.redAccent)),
                                 ),
                                 const SizedBox(width: 8),
                                 ElevatedButton.icon(

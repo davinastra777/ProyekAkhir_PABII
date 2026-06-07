@@ -28,17 +28,27 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             brightness: Brightness.light,
             primaryColor: const Color.fromARGB(255, 1, 1, 129),
+            scaffoldBackgroundColor: const Color(0xFFF8F9FA),
+            cardColor: Colors.white,
+            dividerColor: Colors.grey[300],
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 1, 1, 129),
               brightness: Brightness.light,
+              primary: const Color.fromARGB(255, 1, 1, 129),
             ),
           ),
+
           darkTheme: ThemeData(
             brightness: Brightness.dark,
-            primaryColor: const Color.fromARGB(255, 1, 1, 129),
+            primaryColor: const Color(0xFF7986CB),
+            scaffoldBackgroundColor: const Color(0xFF121212),
+            cardColor: const Color(0xFF1E1E1E),
+            dividerColor: Colors.grey[800],
             colorScheme: ColorScheme.fromSeed(
               seedColor: const Color.fromARGB(255, 1, 1, 129),
               brightness: Brightness.dark,
+              primary: const Color(0xFF7986CB),
+              surface: const Color(0xFF1E1E1E),
             ),
           ),
           home: const SignInScreen(),

@@ -13,6 +13,7 @@ class CommentsSection extends StatefulWidget {
 
 class _CommentsSectionState extends State<CommentsSection> {
   final _commentController = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode(); 
   bool _isSending = false;
 
   CollectionReference get _commentsRef => FirebaseFirestore.instance
@@ -51,6 +52,7 @@ class _CommentsSectionState extends State<CommentsSection> {
       });
 
       _commentController.clear();
+      _commentFocusNode.unfocus(); 
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +82,7 @@ class _CommentsSectionState extends State<CommentsSection> {
   @override
   void dispose() {
     _commentController.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
   }
 
@@ -89,6 +92,7 @@ class _CommentsSectionState extends State<CommentsSection> {
     final accent = theme.primaryColor;
     final surface = theme.cardColor;
     final caption = theme.textTheme.bodySmall;
+    final isDark = theme.brightness == Brightness.dark;
 
     final currentUid = FirebaseAuth.instance.currentUser?.uid;
 
@@ -144,53 +148,90 @@ class _CommentsSectionState extends State<CommentsSection> {
                 final createdAt = _timeAgo(data['createdAt']);
 
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       CircleAvatar(
-                        radius: 18,
+                        radius: 16,
                         backgroundColor: accent.withOpacity(0.15),
                         child: Text(
                           author.isNotEmpty ? author[0].toUpperCase() : 'A',
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.w700,
-                            fontSize: 14,
+                            fontSize: 13,
                           ),
                         ),
                       ),
                       const SizedBox(width: 10),
+                      
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                          decoration: BoxDecoration(
-                            color: surface,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: theme.dividerColor),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2C2C2C) : Colors.grey[100],
+                                borderRadius: const BorderRadius.only(
+                                  topRight: Radius.circular(16),
+                                  bottomLeft: Radius.circular(16),
+                                  bottomRight: Radius.circular(16),
+                                ),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        author,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          color: theme.textTheme.bodyLarge?.color,
+                                        ),
+                                      ),
+                                      Text(
+                                        createdAt,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                          fontSize: 10,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    data['text'] ?? '',
+                                    style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            
+                            Padding(
+                              padding: const EdgeInsets.only(top: 6, left: 12),
+                              child: Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      _commentFocusNode.requestFocus();
+                                      _commentController.text = '@$author ';
+                                    },
                                     child: Text(
-                                      author,
-                                      style: theme.textTheme.bodyMedium?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: theme.textTheme.bodyLarge?.color,
+                                      'balas',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 11,
+                                        color: isDark ? Colors.grey[400] : Colors.grey[600],
                                       ),
                                     ),
                                   ),
-                                  Text(
-                                    createdAt,
-                                    style: theme.textTheme.bodySmall?.copyWith(
-                                      color: theme.hintColor,
-                                    ),
-                                  ),
+                                  
                                   if (isOwner) ...[
-                                    const SizedBox(width: 4),
+                                    const SizedBox(width: 16),
                                     GestureDetector(
                                       onTap: () => showDialog(
                                         context: context,
@@ -212,18 +253,20 @@ class _CommentsSectionState extends State<CommentsSection> {
                                           ],
                                         ),
                                       ),
-                                      child: Icon(Icons.close, size: 14, color: theme.hintColor),
+                                      child: const Text(
+                                        'hapus',
+                                        style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 11,
+                                          color: Colors.red,
+                                        ),
+                                      ),
                                     ),
                                   ],
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Text(
-                                data['text'] ?? '',
-                                style: theme.textTheme.bodyMedium,
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -249,6 +292,7 @@ class _CommentsSectionState extends State<CommentsSection> {
               Expanded(
                 child: TextField(
                   controller: _commentController,
+                  focusNode: _commentFocusNode, 
                   textCapitalization: TextCapitalization.sentences,
                   maxLines: null,
                   decoration: InputDecoration(

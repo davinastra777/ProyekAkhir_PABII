@@ -66,7 +66,9 @@ class _DetailScreenState extends State<DetailScreen> {
         'judul': widget.data['judul'],
         'deskripsi': widget.data['deskripsi'],
         'lokasi': widget.data['lokasi'],
+        'jenis': widget.data['jenis'],
         'jam': widget.data['jam'],
+        'estimasiHari': widget.data['estimasiHari'],
         'tempat_tujuan': widget.data['tempat_tujuan'],
         'rute_alternatif': widget.data['rute_alternatif'],
         'fotoBase64': widget.data['fotoBase64'],
@@ -93,7 +95,8 @@ class _DetailScreenState extends State<DetailScreen> {
       return;
     }
 
-    final uri = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    final url = 'https://www.google.com/maps/search/?api=1&query=$lat,$lng';
+    final uri = Uri.parse(url);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri, mode: LaunchMode.externalApplication);
     } else {
@@ -111,7 +114,6 @@ class _DetailScreenState extends State<DetailScreen> {
     final accent = theme.primaryColor;
     final borderColor = theme.dividerColor;
     final titleStyle = theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold);
-    final labelStyle = theme.textTheme.bodySmall;
 
     return Scaffold(
       appBar: AppBar(
@@ -162,22 +164,22 @@ class _DetailScreenState extends State<DetailScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
-                      if (widget.data['type'] != null)
+                      if (widget.data['jenis'] != null)
                         _Chip(
                           icon: Icons.label,                        
-                          label: widget.data['type'] ?? '-',                      
+                          label: widget.data['jenis'],                      
                           color: accent,
                         ),
                       if (widget.data['jam'] != null)
                         _Chip(
                           icon: Icons.access_time,
-                          label: widget.data['jam'] ?? '-',
+                          label: widget.data['jam'],
                           color: accent,
                         ),
-                      if (widget.data['durationDays'] != null)
+                      if (widget.data['estimasiHari'] != null)
                         _Chip(
                           icon: Icons.calendar_today,
-                          label: '${widget.data['durationDays']} hari',
+                          label: '${widget.data['estimasiHari']} hari',
                           color: accent,
                         ),
                     ],
@@ -203,21 +205,21 @@ class _DetailScreenState extends State<DetailScreen> {
                     const SizedBox(height: 12),
                     _InfoRow(
                       icon: Icons.access_time,
-                      label: 'Jam',
+                      label: 'Jam Operasional',
                       value: widget.data['jam'],
                       theme: theme,
                     ),
                   ],
-                  if (widget.data['durationDays'] != null) ...[
+                  if (widget.data['estimasiHari'] != null) ...[
                     const SizedBox(height: 12),
                     _InfoRow(
                       icon: Icons.calendar_today,
                       label: 'Durasi',
-                      value: '${widget.data['durationDays']} hari',
+                      value: '${widget.data['estimasiHari']} hari',
                       theme: theme,
                     ),
                   ],
-                  if (widget.data['tempat_tujuan'] != null) ...[
+                  if (widget.data['tempat_tujuan'] != null && widget.data['tempat_tujuan'].toString().isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _InfoRow(
                       icon: Icons.place,
@@ -226,7 +228,7 @@ class _DetailScreenState extends State<DetailScreen> {
                       theme: theme,
                     ),
                   ],
-                  if (widget.data['rute_alternatif'] != null) ...[
+                  if (widget.data['rute_alternatif'] != null && widget.data['rute_alternatif'].toString().isNotEmpty) ...[
                     const SizedBox(height: 12),
                     _InfoRow(
                       icon: Icons.alt_route,
@@ -279,7 +281,7 @@ class _Chip extends StatelessWidget {
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
           Text(
-            label ?? '-',
+            label,
             style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13),
           ),
         ],

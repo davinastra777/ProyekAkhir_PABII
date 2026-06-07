@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rute_tikus/screens/post_screen.dart';
 import 'package:rute_tikus/screens/profile_screen.dart';
 import 'package:rute_tikus/screens/detail_screen.dart';
+import 'package:intl/intl.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -27,70 +28,103 @@ class _HomeScreenState extends State<HomeScreen> {
     final theme = Theme.of(context);
     final accent = theme.primaryColor;
     final borderColor = theme.dividerColor;
-    final cardBackground = theme.cardColor;
-    final isDark = theme.brightness == Brightness.dark;
 
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text(
-          'Rute Tikus',
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+        elevation: 0,
+        backgroundColor: theme.scaffoldBackgroundColor,
+        title: Row(
+          children: [
+            Icon(Icons.map_rounded, color: accent, size: 28),
+            const SizedBox(width: 8),
+            Text(
+              'Rute Tikus',
+              style: theme.textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
+              ),
+            ),
+          ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.person_outline),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const ProfileScreen()),
-              );
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: IconButton(
+              icon: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.person, color: accent, size: 22),
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                );
+              },
+            ),
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: borderColor),
-        ),
       ),
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: TextField(
-              controller: _searchController,
-              style: theme.textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: 'Cari nama jalan atau judul laporan...',
-                hintStyle: theme.textTheme.bodySmall,
-                prefixIcon: Icon(Icons.search_outlined, color: accent),
-                suffixIcon: _searchQuery.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear, color: borderColor),
-                        onPressed: () {
-                          setState(() {
-                            _searchController.clear();
-                            _searchQuery = '';
-                          });
-                        },
-                      )
-                    : null,
-                filled: true,
-                fillColor: theme.colorScheme.surface,
-                contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: borderColor),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Cari Rute Alternatif',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: theme.textTheme.bodyLarge?.color?.withOpacity(0.7),
+                  ),
                 ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: borderColor),
+                const SizedBox(height: 12),
+                Container(
+                  decoration: BoxDecoration(
+                    color: theme.cardColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    style: theme.textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                      hintText: 'Cari jalan, acara, atau lokasi...',
+                      hintStyle: theme.textTheme.bodySmall?.copyWith(fontSize: 14),
+                      prefixIcon: Icon(Icons.search_rounded, color: accent),
+                      suffixIcon: _searchQuery.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.cancel_rounded, color: borderColor, size: 20),
+                              onPressed: () {
+                                setState(() {
+                                  _searchController.clear();
+                                  _searchQuery = '';
+                                });
+                              },
+                            )
+                          : null,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(20),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 16),
+                    ),
+                    onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  ),
                 ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(24),
-                  borderSide: BorderSide(color: accent, width: 2),
-                ),
-              ),
-              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+              ],
             ),
           ),
           Expanded(
@@ -100,6 +134,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   .orderBy('createdAt', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text(
+                      'Terjadi kesalahan memuat data.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  );
+                }
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
@@ -108,16 +150,23 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.map_outlined, size: 64, color: theme.dividerColor),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Belum ada data penutupan jalan.',
-                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.dividerColor),
+                        Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(Icons.map_outlined, size: 64, color: accent),
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 24),
                         Text(
-                          'Tap + untuk tambah laporan.',
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.dividerColor),
+                          'Jalanan sedang aman!',
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Belum ada laporan penutupan jalan.',
+                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.dividerColor),
                         ),
                       ],
                     ),
@@ -127,9 +176,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 final docs = snapshot.data!.docs.where((doc) {
                   if (_searchQuery.isEmpty) return true;
                   final data = doc.data() as Map<String, dynamic>;
-                  final title = (data['title'] ?? '').toString().toLowerCase();
-                  final lokasi = (data['locationName'] ?? '').toString().toLowerCase();
-                  final type = (data['type'] ?? '').toString().toLowerCase();
+                  final title = (data['title'] ?? data['judul'] ?? '').toString().toLowerCase();
+                  final lokasi = (data['locationName'] ?? data['lokasi'] ?? '').toString().toLowerCase();
+                  final type = (data['type'] ?? data['jenis'] ?? '').toString().toLowerCase();
                   return title.contains(_searchQuery) || lokasi.contains(_searchQuery) || type.contains(_searchQuery);
                 }).toList();
 
@@ -138,10 +187,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.search_off_outlined, size: 52, color: theme.dividerColor),
-                        const SizedBox(height: 12),
+                        Icon(Icons.search_off_rounded, size: 64, color: theme.dividerColor),
+                        const SizedBox(height: 16),
                         Text(
-                          'Tidak ada laporan untuk "$_searchQuery"',
+                          'Tidak ada hasil untuk "$_searchQuery"',
                           style: theme.textTheme.bodyMedium?.copyWith(color: theme.dividerColor),
                         ),
                       ],
@@ -150,7 +199,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 return ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
+                  padding: const EdgeInsets.only(top: 8, bottom: 80),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
@@ -163,14 +212,20 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const AddBlockadePostScreen()),
           );
         },
-        child: const Icon(Icons.add, color: Colors.black),
+        backgroundColor: accent,
+        elevation: 4,
+        icon: const Icon(Icons.add_location_alt_rounded, color: Colors.white),
+        label: const Text(
+          'Tambah',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        ),
       ),
     );
   }
@@ -181,12 +236,36 @@ class _BlockadeCard extends StatelessWidget {
   final Map<String, dynamic> data;
   final String docId;
 
+  String _formatTanggalCerdas(String? startDateIso, String? endDateIso) {
+    if (startDateIso == null || endDateIso == null) return '-';
+    try {
+      final start = DateTime.parse(startDateIso);
+      final end = DateTime.parse(endDateIso);
+      
+      final startStr = DateFormat('dd MMM').format(start);
+      final endStr = DateFormat('dd MMM yyyy').format(end);
+
+      if (start.day == end.day && start.month == end.month && start.year == end.year) {
+        return endStr;
+      }
+      return '$startStr - $endStr';
+    } catch (e) {
+      return '-';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = theme.primaryColor;
     final isDark = theme.brightness == Brightness.dark;
-    final type = data['type'] as String?;
+    final type = data['type'] ?? data['jenis'] ?? 'Lainnya';
+    final title = data['title'] ?? data['judul'] ?? 'Tanpa Judul';
+    final location = data['locationName'] ?? data['lokasi'] ?? '-';
+    final imageBase64 = data['image'] ?? data['fotoBase64'];
+    final timeStr = data['jam'] ?? '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}';
+    final reporter = data['fullName'] ?? 'Anonim';
+    final tanggalAktif = _formatTanggalCerdas(data['startDate'] ?? data['tanggalMulai'], data['endDate'] ?? data['tanggalSelesai']);
 
     return GestureDetector(
       onTap: () {
@@ -196,143 +275,176 @@ class _BlockadeCard extends StatelessWidget {
             builder: (_) => DetailScreen(
               blockadeId: docId,
               data: {
-                'judul': data['title'],
-                'deskripsi': data['description'],
-                'lokasi': data['locationName'],
-                'jam': '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}',
-                'tempat_tujuan': data['nearestDest'],
-                'rute_alternatif': data['altRoute'],
-                'fotoBase64': data['image'],
+                'judul': title,
+                'deskripsi': data['description'] ?? data['deskripsi'],
+                'lokasi': location,
+                'jam': timeStr,
+                'tempat_tujuan': data['nearestDest'] ?? data['tempat_tujuan'],
+                'rute_alternatif': data['altRoute'] ?? data['rute_alternatif'],
+                'fotoBase64': imageBase64,
                 'latitude': data['latitude'],
                 'longitude': data['longitude'],
-                'type': data['type'],
-                'durationDays': data['durationDays'],
+                'jenis': type,
+                'estimasiHari': data['durationDays'] ?? data['estimasiHari'],
               },
             ),
           ),
         );
       },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        elevation: 2,
-        shadowColor: isDark ? Colors.black54 : Colors.black12,
-        color: theme.cardColor,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: isDark ? Colors.black.withOpacity(0.3) : Colors.black.withOpacity(0.06),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-              child: data['image'] != null
-                  ? Image.memory(
-                      base64Decode(data['image']),
-                      height: 180,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
-                    )
-                  : Container(
-                      height: 180,
-                      color: isDark ? const Color(0xFF111111) : const Color(0xFFF2F2F2),
-                      child: Center(
-                        child: Icon(Icons.image_outlined, size: 50, color: theme.dividerColor),
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  child: imageBase64 != null
+                      ? Image.memory(
+                          base64Decode(imageBase64),
+                          height: 170,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                        )
+                      : Container(
+                          height: 170,
+                          color: isDark ? const Color(0xFF222222) : Colors.grey[200],
+                          child: Center(
+                            child: Icon(Icons.image_outlined, size: 50, color: theme.dividerColor),
+                          ),
+                        ),
+                ),
+                Positioned(
+                  bottom: 0, left: 0, right: 0,
+                  height: 60,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [Colors.black.withOpacity(0.6), Colors.transparent],
                       ),
                     ),
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                    ),
+                    child: Text(
+                      type,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
+            
             Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: accent.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          type ?? 'Lainnya',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: accent,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      if (data['durationDays'] != null)
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_today, size: 12, color: theme.dividerColor),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${data['durationDays']} hari',
-                              style: theme.textTheme.bodySmall?.copyWith(color: theme.dividerColor),
-                            ),
-                          ],
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
                   Text(
-                    data['title'] ?? 'Tanpa Judul',
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                    title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 18,
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if (data['description'] != null && data['description'].toString().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      data['description'],
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodySmall?.color),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
                   const SizedBox(height: 12),
+                  
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.location_on_outlined, size: 14, color: accent),
-                      const SizedBox(width: 4),
+                      Icon(Icons.location_on_rounded, size: 18, color: accent),
+                      const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          data['locationName'] ?? '-',
-                          style: theme.textTheme.bodySmall,
+                          location,
+                          style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w500),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Icon(Icons.access_time, size: 14, color: theme.dividerColor),
-                      const SizedBox(width: 4),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_month_rounded, size: 16, color: theme.dividerColor),
+                      const SizedBox(width: 6),
                       Text(
-                        '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}',
-                        style: theme.textTheme.bodySmall,
+                        tanggalAktif,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Icon(Icons.access_time_rounded, size: 16, color: theme.dividerColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        timeStr,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.textTheme.bodyMedium?.color?.withOpacity(0.7),
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ],
                   ),
-                  if (data['altRoute'] != null && data['altRoute'].toString().isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.alt_route, size: 14, color: accent),
-                        const SizedBox(width: 4),
-                        Expanded(
-                          child: Text(
-                            data['altRoute'],
-                            style: theme.textTheme.bodySmall?.copyWith(color: accent),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                  
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Divider(height: 1, color: theme.dividerColor.withOpacity(0.5)),
+                  ),
+                  
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        radius: 10,
+                        backgroundColor: accent.withOpacity(0.2),
+                        child: Icon(Icons.person, size: 12, color: accent),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Dilaporkan oleh: ',
+                        style: theme.textTheme.bodySmall?.copyWith(fontSize: 11),
+                      ),
+                      Text(
+                        reporter,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: accent,
                         ),
-                      ],
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  Text(
-                    'Dilaporkan oleh: ${data['fullName'] ?? 'Anonim'}',
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.dividerColor),
+                      ),
+                    ],
                   ),
                 ],
               ),
