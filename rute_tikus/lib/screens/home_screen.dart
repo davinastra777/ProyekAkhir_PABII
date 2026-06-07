@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:rute_tikus/screens/post_screen.dart';
 import 'package:rute_tikus/screens/profile_screen.dart';
@@ -50,19 +51,34 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: IconButton(
-              icon: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: accent.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.person, color: accent, size: 22),
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+            child: StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseAuth.instance.currentUser != null
+                  ? FirebaseFirestore.instance.collection('users').doc(FirebaseAuth.instance.currentUser!.uid).snapshots()
+                  : null,
+              builder: (context, snapshot) {
+                String? base64Image;
+                if (snapshot.hasData && snapshot.data!.data() != null) {
+                  final data = snapshot.data!.data() as Map<String, dynamic>;
+                  base64Image = data['fotoProfil'];
+                }
+
+                return IconButton(
+                  icon: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: accent.withOpacity(0.1),
+                    backgroundImage: base64Image != null && base64Image.isNotEmpty
+                        ? MemoryImage(base64Decode(base64Image))
+                        : null,
+                    child: base64Image == null || base64Image.isEmpty
+                        ? Icon(Icons.person, color: accent, size: 22)
+                        : null,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                    );
+                  },
                 );
               },
             ),
