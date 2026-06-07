@@ -191,7 +191,7 @@ class _FavoriteScreenState extends State<FavoriteScreen> {
                                   label: const Text('Lihat Detail'),
                                   style: ElevatedButton.styleFrom(
                                     backgroundColor: accent,
-                                    foregroundColor: Colors.black,
+                                    foregroundColor: Colors.white,
                                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(14),

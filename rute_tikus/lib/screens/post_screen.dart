@@ -401,7 +401,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: accent,
-                    foregroundColor: Colors.black,
+                    foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -519,7 +519,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(type.icon, color: selected ? Colors.black : type.color, size: 28),
+                  Icon(type.icon, color: selected ? Colors.white : type.color, size: 28),
                   const SizedBox(height: 6),
                   Text(
                     type.label,
@@ -527,7 +527,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: selected ? Colors.black : theme.textTheme.bodySmall?.color,
+                      color: selected ? Colors.white : theme.textTheme.bodySmall?.color,
                       fontSize: 10,
                       fontWeight: selected ? FontWeight.w700 : FontWeight.normal,
                     ),
@@ -611,7 +611,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: accent,
-              foregroundColor: Colors.black,
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(14),

@@ -244,7 +244,7 @@ class _DetailScreenState extends State<DetailScreen> {
                     label: const Text('Buka di Google Maps'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: accent,
-                      foregroundColor: Colors.black,
+                      foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
                     ),
                   ),
