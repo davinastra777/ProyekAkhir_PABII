@@ -53,7 +53,7 @@ class SignInScreenState extends State<SignInScreen> {
   }
 
   bool _isValidEmail(String email) {
-    String emailRegex = r"^[a-zA-Z0-9.!#\$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zAZ0-9-]+)*$";
+    String emailRegex = r"^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$";
     return RegExp(emailRegex).hasMatch(email);
   }
 
@@ -67,40 +67,75 @@ class SignInScreenState extends State<SignInScreen> {
     }
   }
 
+  InputDecoration _buildInputDecoration(String label, IconData icon, ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: theme.primaryColor),
+      filled: true,
+      fillColor: isDark ? Colors.grey[800] : Colors.grey[50],
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide.none,
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: theme.dividerColor.withOpacity(0.2)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(16),
+        borderSide: BorderSide(color: theme.primaryColor, width: 2),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accent = theme.primaryColor;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Sign In Rute Tikus',
-          style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: theme.dividerColor),
-        ),
-      ),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
+      backgroundColor: theme.scaffoldBackgroundColor,
+      body: SafeArea(
+        child: Center(
           child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
             child: Form(
               key: _formKey,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.map_outlined, size: 80, color: accent),
-                  const SizedBox(height: 30),
+                  Hero(
+                    tag: 'app_logo',
+                    child: Image.asset(
+                      'assets/logo.png', 
+                      height: 120,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  
+                  Text(
+                    'Selamat Datang!',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: accent,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Masuk untuk membagikan info Rute Tikus Anda',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
-                    decoration: InputDecoration(
-                      labelText: 'Email',
-                      prefixIcon: const Icon(Icons.email_outlined),
-                    ),
+                    decoration: _buildInputDecoration('Email', Icons.email_outlined, theme),
                     validator: (value) {
                       if (value == null || value.isEmpty || !_isValidEmail(value)) {
                         return 'Silakan masukkan email yang valid';
@@ -108,16 +143,16 @@ class SignInScreenState extends State<SignInScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 20.0),
+
                   TextFormField(
                     controller: _passwordController,
                     obscureText: !_isPasswordVisible,
-                    decoration: InputDecoration(
-                      labelText: 'Password',
-                      prefixIcon: const Icon(Icons.lock_outline),
+                    decoration: _buildInputDecoration('Password', Icons.lock_outline, theme).copyWith(
                       suffixIcon: IconButton(
                         icon: Icon(
                           _isPasswordVisible ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.grey,
                         ),
                         onPressed: () {
                           setState(() {
@@ -133,22 +168,28 @@ class SignInScreenState extends State<SignInScreen> {
                       return null;
                     },
                   ),
-                  const SizedBox(height: 24.0),
+                  const SizedBox(height: 40.0),
+
                   _isLoading
                       ? const CircularProgressIndicator()
                       : ElevatedButton(
                           onPressed: _signIn,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: accent,
-                            foregroundColor: Colors.black,
-                            minimumSize: const Size(double.infinity, 52),
+                            foregroundColor: Colors.white,
+                            minimumSize: const Size(double.infinity, 56),
+                            elevation: 2,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(16),
                             ),
                           ),
-                          child: const Text('Sign In', style: TextStyle(fontSize: 18)),
+                          child: const Text(
+                            'Sign In',
+                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
                         ),
-                  const SizedBox(height: 16.0),
+                  const SizedBox(height: 24.0),
+
                   RichText(
                     text: TextSpan(
                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodySmall?.color),
@@ -159,6 +200,7 @@ class SignInScreenState extends State<SignInScreen> {
                           style: TextStyle(
                             color: accent,
                             fontWeight: FontWeight.bold,
+                            fontSize: 15,
                           ),
                           recognizer: TapGestureRecognizer()
                             ..onTap = () {

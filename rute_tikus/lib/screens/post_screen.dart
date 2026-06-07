@@ -102,7 +102,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
         _longitude = pos.longitude;
       });
 
-      _showSnack('Lokasi berhasil didapatkan ?');
+      _showSnack('Lokasi berhasil didapatkan');
     } catch (e) {
       debugPrint('Lokasi gagal: $e');
       _showSnack('Gagal mendapatkan lokasi: $e');
@@ -201,12 +201,20 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
   }
 
   Future<void> _pickOpenTime() async {
-    final t = await showTimePicker(context: context, initialTime: _openTime);
+    final t = await showTimePicker(
+      context: context, 
+      initialTime: _openTime,
+      initialEntryMode: TimePickerEntryMode.input,
+    );
     if (t != null) setState(() => _openTime = t);
   }
 
   Future<void> _pickCloseTime() async {
-    final t = await showTimePicker(context: context, initialTime: _closeTime);
+    final t = await showTimePicker(
+      context: context, 
+      initialTime: _closeTime,
+      initialEntryMode: TimePickerEntryMode.input,
+    );
     if (t != null) setState(() => _closeTime = t);
   }
 
@@ -249,20 +257,19 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
       final fullName = userDoc.data()?['fullName'] ?? userDoc.data()?['fullname'] ?? 'Anonim';
 
       await FirebaseFirestore.instance.collection('postingan').add({
-        'image': _base64Image,
-        'title': _titleController.text.trim(),
-        'description': _descController.text.trim(),
-        'type': _selectedType.label,
-        'locationName': _locationNameController.text.trim(),
+        'fotoBase64': _base64Image,
+        'judul': _titleController.text.trim(),
+        'deskripsi': _descController.text.trim(),
+        'jenis': _selectedType.label,
+        'lokasi': _locationNameController.text.trim(),
         'latitude': _latitude,
         'longitude': _longitude,
-        'startDate': _startDate.toIso8601String(),
-        'endDate': _endDate.toIso8601String(),
-        'durationDays': _durationDays,
-        'openTime': _fmtTime(_openTime),
-        'closeTime': _fmtTime(_closeTime),
-        'nearestDest': _nearestDestController.text.trim(),
-        'altRoute': _altRouteController.text.trim(),
+        'tanggalMulai': _startDate.toIso8601String(),
+        'tanggalSelesai': _endDate.toIso8601String(),
+        'estimasiHari': _durationDays,
+        'jam': '${_fmtTime(_openTime)} s/d ${_fmtTime(_closeTime)}',
+        'tempat_tujuan': _nearestDestController.text.trim(),
+        'rute_alternatif': _altRouteController.text.trim(),
         'fullName': fullName,
         'userId': uid,
         'createdAt': DateTime.now().toIso8601String(),
@@ -691,7 +698,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
               ),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 6),
-                child: Text('�', style: TextStyle(color: Colors.grey, fontSize: 16)),
+                child: Text('s/d', style: TextStyle(color: Colors.grey, fontSize: 14)),
               ),
               _TimePill(
                 time: _fmtTime(_closeTime),

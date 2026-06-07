@@ -1,10 +1,12 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:rute_tikus/screens/favorite_screen.dart';
+import 'package:rute_tikus/screens/sign_in_screen.dart';
 import 'package:rute_tikus/main.dart';
+import 'package:rute_tikus/screens/riwayat_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -20,18 +22,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   String _fullName = 'Memuat nama...';
   String _email = 'Memuat email...';
-  String _profilePhotoUrl = '';
+  String _noHp = '-';
+  String _fotoProfilBase64 = '';
+  
   bool _isLoading = true;
   bool _isUploadingPhoto = false;
   int _totalLaporan = 0;
-  // Tambah state untuk dark mode
   bool _isDark = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
-     _isDark = themeNotifier.value == ThemeMode.dark;
+    _isDark = themeNotifier.value == ThemeMode.dark;
   }
 
   Future<void> _loadUserData() async {
@@ -49,7 +52,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         setState(() {
           _fullName = userDoc.data()?['fullName'] ?? userDoc.data()?['fullname'] ?? 'Pengguna Baru';
           _email = userDoc.data()?['email'] ?? user.email ?? '-';
-          _profilePhotoUrl = userDoc.data()?['profilePhotoUrl'] ?? '';
+          _noHp = userDoc.data()?['noHp'] ?? '-';
+          _fotoProfilBase64 = userDoc.data()?['fotoProfil'] ?? '';
           _totalLaporan = postDocs.docs.length;
           _isLoading = false;
         });
@@ -68,7 +72,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.gallery,
-        imageQuality: 85,
+        imageQuality: 40,
+        maxWidth: 600,
       );
       if (pickedFile == null) return;
 
@@ -81,23 +86,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       }
 
       final bytes = await pickedFile.readAsBytes();
-      final fileName = 'profile_${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('profile_photos')
-          .child(fileName);
+      final base64String = base64Encode(bytes);
 
-      await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
-      final downloadUrl = await ref.getDownloadURL();
-
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).set(
-        {'profilePhotoUrl': downloadUrl},
+      await _firestore.collection('users').doc(user.uid).set(
+        {'fotoProfil': base64String},
         SetOptions(merge: true),
       );
 
       if (mounted) {
         setState(() {
-          _profilePhotoUrl = downloadUrl;
+          _fotoProfilBase64 = base64String;
           _isUploadingPhoto = false;
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -116,16 +114,35 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _editDataPribadi() {
     final nameController = TextEditingController(text: _fullName);
+    final phoneController = TextEditingController(text: _noHp == '-' ? '' : _noHp);
 
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        title: const Text('Edit Nama Lengkap'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(
-            labelText: 'Nama Baru',
-            border: OutlineInputBorder(),
+        title: const Text('Edit Data Pribadi'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nama Lengkap',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.person),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Nomor Telepon',
+                  border: OutlineInputBorder(),
+                  prefixIcon: Icon(Icons.phone),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
@@ -136,20 +153,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ElevatedButton(
             onPressed: () async {
               final newName = nameController.text.trim();
-              if (newName.isEmpty) return;
+              final newPhone = phoneController.text.trim();
+
+              if (newName.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Nama tidak boleh kosong!')),
+                );
+                return;
+              }
+              
               final user = _auth.currentUser;
               if (user == null) return;
 
               await _firestore.collection('users').doc(user.uid).set(
-                {'fullName': newName, 'email': user.email},
+                {
+                  'fullName': newName,
+                  'noHp': newPhone,
+                },
                 SetOptions(merge: true),
               );
 
               if (mounted) {
-                setState(() => _fullName = newName);
+                setState(() {
+                  _fullName = newName;
+                  _noHp = newPhone.isNotEmpty ? newPhone : '-';
+                });
                 Navigator.pop(context);
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Nama berhasil diperbarui!')),
+                  const SnackBar(content: Text('Data berhasil diperbarui!')),
                 );
               }
             },
@@ -165,6 +196,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Berhasil keluar akun')),
+      );
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const SignInScreen()),
+        (route) => false,
       );
     }
   }
@@ -201,10 +237,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         CircleAvatar(
                           radius: 52,
                           backgroundColor: avatarBg,
-                          backgroundImage: _profilePhotoUrl.isNotEmpty
-                              ? NetworkImage(_profilePhotoUrl)
+                          backgroundImage: _fotoProfilBase64.isNotEmpty
+                              ? MemoryImage(base64Decode(_fotoProfilBase64))
                               : null,
-                          child: _profilePhotoUrl.isEmpty
+                          child: _fotoProfilBase64.isEmpty
                               ? Text(
                                   _fullName.isNotEmpty ? _fullName[0].toUpperCase() : 'U',
                                   style: const TextStyle(
@@ -215,13 +251,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 )
                               : null,
                         ),
+                        if (_isUploadingPhoto)
+                          const Positioned.fill(
+                            child: CircularProgressIndicator(color: Colors.white),
+                          ),
                         Positioned(
                           bottom: 0,
                           right: 0,
                           child: CircleAvatar(
                             radius: 18,
                             backgroundColor: accent,
-                            child: const Icon(Icons.camera_alt, color: Colors.black, size: 18),
+                            child: Icon(Icons.camera_alt, color: _isDark ? Colors.black : Colors.white, size: 18),
                           ),
                         ),
                       ],
@@ -237,6 +277,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _email,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.textTheme.bodySmall?.color,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    _noHp,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: accent,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
                   const SizedBox(height: 24),
@@ -260,10 +308,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             'Anda telah membagikan $_totalLaporan laporan blokade.',
                             style: theme.textTheme.bodySmall,
                           ),
-                          trailing: Icon(Icons.verified, size: 20, color: accent),
+                          trailing: Icon(Icons.arrow_forward_ios, size: 16, color: accent),
                           onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('Total kontribusi: $_totalLaporan laporan.')),
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const RiwayatScreen()),
                             );
                           },
                         ),
@@ -314,13 +363,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ],
               ),
             ),
-      // Perbaiki bottomNavigationBar — hapus AppColors
       bottomNavigationBar: Container(
-        color: _isDark ? Colors.grey[900] : Colors.black87,
+        color: _isDark ? Colors.grey[900] : theme.primaryColor,
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Text(
           'Total kontribusi Anda: $_totalLaporan laporan.',
-          style: theme.textTheme.bodySmall?.copyWith(color: accent),
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: _isDark ? accent : Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
           textAlign: TextAlign.center,
         ),
       ),
