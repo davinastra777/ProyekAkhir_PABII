@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 
 class CommentsSection extends StatefulWidget {
   final String blockadeId;
@@ -152,17 +153,33 @@ class _CommentsSectionState extends State<CommentsSection> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      CircleAvatar(
-                        radius: 16,
-                        backgroundColor: accent.withOpacity(0.15),
-                        child: Text(
-                          author.isNotEmpty ? author[0].toUpperCase() : 'A',
-                          style: TextStyle(
-                            color: accent,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
+                      FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance.collection('users').doc(data['userId']).get(),
+                        builder: (context, userSnapshot) {
+                          String? base64Image;
+                          if (userSnapshot.hasData && userSnapshot.data!.data() != null) {
+                            final userData = userSnapshot.data!.data() as Map<String, dynamic>;
+                            base64Image = userData['fotoProfil'];
+                          }
+                          
+                          return CircleAvatar(
+                            radius: 16,
+                            backgroundColor: accent.withOpacity(0.15),
+                            backgroundImage: base64Image != null && base64Image.isNotEmpty
+                                ? MemoryImage(base64Decode(base64Image))
+                                : null,
+                            child: base64Image == null || base64Image.isEmpty
+                                ? Text(
+                                    author.isNotEmpty ? author[0].toUpperCase() : 'A',
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13,
+                                    ),
+                                  )
+                                : null,
+                          );
+                        },
                       ),
                       const SizedBox(width: 10),
                       
