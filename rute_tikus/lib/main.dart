@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:rute_tikus/screens/sign_in_screen.dart';
 import 'firebase_options.dart';
+import 'screens/splash_screen.dart';
 
 final themeNotifier = ValueNotifier<ThemeMode>(ThemeMode.light);
 
@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
               surface: const Color(0xFF1E1E1E),
             ),
           ),
-          home: const SignInScreen(),
+          home: const SplashScreen(),
         );
       },
     );

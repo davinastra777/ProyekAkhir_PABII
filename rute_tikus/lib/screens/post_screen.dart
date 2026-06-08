@@ -153,7 +153,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
             ListTile(
               leading: CircleAvatar(
                 backgroundColor: theme.primaryColor,
-                child: const Icon(Icons.camera_alt, color: Colors.black),
+                child: const Icon(Icons.camera_alt, color: Colors.white),
               ),
               title: const Text('Ambil Foto'),
               subtitle: const Text('Foto langsung kondisi blokade'),
@@ -165,7 +165,7 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
             ListTile(
               leading: CircleAvatar(
                 backgroundColor: theme.primaryColor,
-                child: const Icon(Icons.photo_library, color: Colors.black),
+                child: const Icon(Icons.photo_library, color: Colors.white),
               ),
               title: const Text('Pilih dari Galeri'),
               onTap: () {
@@ -181,24 +181,39 @@ class _AddBlockadePostScreenState extends State<AddBlockadePostScreen>
   }
 
   Future<void> _pickStartDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _startDate,
-      firstDate: DateTime.now().subtract(const Duration(days: 1)),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) setState(() => _startDate = picked);
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: _startDate,
+    firstDate: DateTime.now().subtract(const Duration(days: 1)),
+    lastDate: DateTime.now().add(const Duration(days: 365)),
+  );
+
+  if (picked != null) {
+    setState(() {
+      _startDate = picked;
+      if (_endDate.isBefore(_startDate)) {
+        _endDate = _startDate.add(const Duration(days: 1));
+      }
+    });
   }
+}
 
   Future<void> _pickEndDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _endDate,
-      firstDate: _startDate,
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (picked != null) setState(() => _endDate = picked);
+  final picked = await showDatePicker(
+    context: context,
+    initialDate: _endDate.isAfter(_startDate)
+        ? _endDate
+        : _startDate.add(const Duration(days: 1)),
+    firstDate: _startDate,
+    lastDate: DateTime.now().add(const Duration(days: 365)),
+  );
+
+  if (picked != null) {
+    setState(() {
+      _endDate = picked;
+    });
   }
+}
 
   Future<void> _pickOpenTime() async {
     final t = await showTimePicker(
