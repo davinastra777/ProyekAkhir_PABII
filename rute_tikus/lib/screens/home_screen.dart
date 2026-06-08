@@ -6,6 +6,7 @@ import 'package:rute_tikus/screens/post_screen.dart';
 import 'package:rute_tikus/screens/profile_screen.dart';
 import 'package:rute_tikus/screens/detail_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 enum StatusFilter { semua, belumMulai, berlangsung, selesai }
 

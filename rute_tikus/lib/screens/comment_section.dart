@@ -153,7 +153,7 @@ class _CommentsSectionState extends State<CommentsSection> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                     FutureBuilder<DocumentSnapshot>(
+                      FutureBuilder<DocumentSnapshot>(
                         future: FirebaseFirestore.instance.collection('users').doc(data['userId']).get(),
                         builder: (context, userSnapshot) {
                           String? base64Image;
