@@ -72,7 +72,16 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
                     final docId = docs[index].id;
-                    final type = data['type'] as String?;
+                    
+                    // Menyelaraskan fallback key (Bahasa Indonesia ?? Bahasa Inggris)
+                    final String? fotoBase64 = data['fotoBase64'] ?? data['image'];
+                    final String judul = data['judul'] ?? data['title'] ?? 'Tanpa Judul';
+                    final String? deskripsi = data['deskripsi'] ?? data['description'];
+                    final String jenis = data['jenis'] ?? data['type'] ?? 'Lainnya';
+                    final String lokasi = data['lokasi'] ?? data['locationName'] ?? '-';
+                    final dynamic estimasiHari = data['estimasiHari'] ?? data['durationDays'];
+                    final String jamOperasional = data['jam'] ?? '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}';
+
                     return GestureDetector(
                       onTap: () {
                         Navigator.push(
@@ -81,17 +90,17 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                             builder: (_) => DetailScreen(
                               blockadeId: docId,
                               data: {
-                                'judul': data['title'],
-                                'deskripsi': data['description'],
-                                'lokasi': data['locationName'],
-                                'jam': '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}',
-                                'tempat_tujuan': data['nearestDest'],
-                                'rute_alternatif': data['altRoute'],
-                                'fotoBase64': data['image'],
+                                'judul': judul,
+                                'deskripsi': deskripsi,
+                                'lokasi': lokasi,
+                                'jam': jamOperasional,
+                                'tempat_tujuan': data['tempat_tujuan'] ?? data['nearestDest'],
+                                'rute_alternatif': data['rute_alternatif'] ?? data['altRoute'],
+                                'fotoBase64': fotoBase64,
                                 'latitude': data['latitude'],
                                 'longitude': data['longitude'],
-                                'jenis': data['type'], 
-                                'estimasiHari': data['durationDays'], 
+                                'jenis': jenis, 
+                                'estimasiHari': estimasiHari, 
                               },
                             ),
                           ),
@@ -108,9 +117,9 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                           children: [
                             ClipRRect(
                               borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
-                              child: data['image'] != null
+                              child: fotoBase64 != null
                                   ? Image.memory(
-                                      base64Decode(data['image']),
+                                      base64Decode(fotoBase64),
                                       height: 180,
                                       width: double.infinity,
                                       fit: BoxFit.cover,
@@ -137,7 +146,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                           borderRadius: BorderRadius.circular(20),
                                         ),
                                         child: Text(
-                                          type ?? 'Lainnya',
+                                          jenis,
                                           style: theme.textTheme.bodySmall?.copyWith(
                                             color: accent,
                                             fontWeight: FontWeight.w700,
@@ -145,13 +154,13 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                         ),
                                       ),
                                       const Spacer(),
-                                      if (data['durationDays'] != null)
+                                      if (estimasiHari != null)
                                         Row(
                                           children: [
                                             Icon(Icons.calendar_today, size: 12, color: theme.dividerColor),
                                             const SizedBox(width: 4),
                                             Text(
-                                              '${data['durationDays']} hari',
+                                              '$estimasiHari hari',
                                               style: theme.textTheme.bodySmall?.copyWith(color: theme.dividerColor),
                                             ),
                                           ],
@@ -160,15 +169,15 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                   ),
                                   const SizedBox(height: 10),
                                   Text(
-                                    data['title'] ?? 'Tanpa Judul',
+                                    judul,
                                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (data['description'] != null && data['description'].toString().isNotEmpty) ...[
+                                  if (deskripsi != null && deskripsi.toString().isNotEmpty) ...[
                                     const SizedBox(height: 8),
                                     Text(
-                                      data['description'],
+                                      deskripsi,
                                       style: theme.textTheme.bodyMedium?.copyWith(color: theme.textTheme.bodySmall?.color),
                                       maxLines: 2,
                                       overflow: TextOverflow.ellipsis,
@@ -181,7 +190,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
-                                          data['locationName'] ?? '-',
+                                          lokasi,
                                           style: theme.textTheme.bodySmall,
                                           maxLines: 1,
                                           overflow: TextOverflow.ellipsis,
@@ -191,7 +200,7 @@ class _RiwayatScreenState extends State<RiwayatScreen> {
                                       Icon(Icons.access_time, size: 14, color: theme.dividerColor),
                                       const SizedBox(width: 4),
                                       Text(
-                                        '${data['openTime'] ?? ''} - ${data['closeTime'] ?? ''}',
+                                        jamOperasional,
                                         style: theme.textTheme.bodySmall,
                                       ),
                                     ],
